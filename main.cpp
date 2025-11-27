@@ -252,10 +252,10 @@ void writeFile1(ofstream& file, Node* node) {
 void writeFile2(ofstream& file, Node* node) {
     if (node == nullptr) return;
     if (node->left_child != nullptr) {
-        file << node->id << " -> " << node->left_child->id << ";";
+        file << node->id << " -> " << node->left_child->id << ";" << endl;
     }
     if (node->right_child != nullptr) {
-        file << node->id << " -> " << node->right_child->id << ";";
+        file << node->id << " -> " << node->right_child->id << ";" << endl;
     }
     writeFile2(file, node->left_child);
     writeFile2(file, node->right_child);
