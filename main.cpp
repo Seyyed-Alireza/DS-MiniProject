@@ -64,10 +64,74 @@ string newParenthesesValue(int& index, string result) {
     new_value.pop_back();
     return new_value;
 }
-void build_tree(vector<Token> tokens) {
-    generate_kid();
 
+vector<Token> tokenize(string math) {
+    vector<Token> tokens;
+    int index = 0;
+    while (index < math.length()) {
+        if (math[index] == '+' || math[index] == '-' || math[index] == '*' || math[index] == '/' || math[index] == '^') {
+            Token new_token;
+            new_token.kind = "operation";
+            new_token.str_value = math[index];
+            new_token.num_value = 0;
+            tokens.push_back(new_token);
+            index++;
+            continue;
+        }
+
+        if ('0' <= math[index] && math[index] <= '9') {
+            string new_number = newNumberValue(index, math);
+            Token new_token;
+            new_token.kind = "number";
+            new_token.str_value = "";
+            new_token.num_value = float(stoi(new_number));
+            tokens.push_back(new_token);
+            continue;
+        }
+
+        if (math[index] == '(') {
+            string new_value = newParenthesesValue(index, math);
+            Token new_token;
+            new_token.kind = "math";
+            new_token.str_value = new_value;
+            new_token.num_value = 0;
+            tokens.push_back(new_token);
+            continue;
+        }
+
+        if (math[index] == '$') {
+            index++;
+            if (math[index] == '(') {
+                string new_value = "$(";
+                new_value += newParenthesesValue(index, math);
+                new_value += ')';
+                Token new_token;
+                new_token.kind = "math";
+                new_token.str_value = new_value;
+                new_token.num_value = 0;
+                tokens.push_back(new_token);
+            } else {
+                string new_number = newNumberValue(index, math);
+                Token new_token;
+                new_token.kind = "number";
+                new_token.str_value = "";
+                new_token.num_value = sqrt(stoi(new_number));
+                tokens.push_back(new_token);
+            }
+            continue;
+        }
+
+        index++;
+    }
+
+    return tokens;
 }
+
+// void build_tree(vector<Token> tokens) {
+//     generate_kid();
+
+// }
+
 int main() {
     operation['$' - 36] = 6;
     operation['+' - 36] = 1;
@@ -199,7 +263,7 @@ int main() {
     //     if (tokens[i].kind == "number") cout << tokens[i].num_value << ' ';
     //     else cout << tokens[i].str_value << ' ';
     // }
-    ofstream file("tree");
+    ofstream file("tree.dot");
     auto root = generate_kid(tokens);
     vector<Token> left_ch = root.first;
     vector<Token> right_ch = root.second;
