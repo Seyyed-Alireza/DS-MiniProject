@@ -105,9 +105,7 @@ vector<Token> tokenize(string math) {
         if (math[index] == '$') {
             index++;
             if (math[index] == '(') {
-                // string new_value = "$(";
                 string new_value = newParenthesesValue(index, math);
-                // new_value += ')';
                 Token new_token;
                 new_token.kind = "math";
                 new_token.str_value = new_value;
@@ -145,10 +143,42 @@ vector<Token> tokenize(string math) {
     return tokens;
 }
 
-// void build_tree(vector<Token> tokens) {
-//     generate_kid();
+void buildTree(Node* node, vector<Token> left, vector<Token> right);
 
-// }
+void build_number_left(Node* node, Token l) {
+    node->left_child->id = id_counter; id_counter++;
+    node->left_child->kind = "number";
+    node->left_child->str_value = to_string(l.num_value);
+    node->left_child->left_child = nullptr; node->left_child->right_child = nullptr;
+}
+
+void build_number_right(Node* node, Token r) {
+    node->right_child->id = id_counter; id_counter++;
+    node->right_child->kind = "number";
+    node->right_child->str_value = to_string(r.num_value);
+    node->right_child->right_child = nullptr; node->right_child->right_child = nullptr;
+}
+
+void build_tree_left(Node* node, Token l) {
+    node->left_child->id = id_counter; id_counter++;
+    node->left_child->kind = "operation";
+    auto root = generate_kid(tokenize(l.str_value));
+    string opt = root.first.back().str_value;
+    root.first.pop_back();
+    node->left_child->str_value = opt;
+    buildTree(node->left_child, root.first, root.second);
+}
+
+void build_tree_right(Node* node, Token r) {
+    node->right_child->id = id_counter; id_counter++;
+    node->right_child->kind = "operation";
+    auto root = generate_kid(tokenize(r.str_value));
+    string opt = root.first.back().str_value;
+    root.first.pop_back();
+    node->right_child->str_value = opt;
+    buildTree(node->right_child, root.first, root.second);
+}
+
 
 void buildTree(Node* node, vector<Token> left, vector<Token> right) {
     node->left_child = new Node();
@@ -156,54 +186,24 @@ void buildTree(Node* node, vector<Token> left, vector<Token> right) {
     if (left.size() == 1 && right.size() == 1) {
         Token l = left[0], r = right[0];
         if (l.kind == "number" && r.kind == "number") {
-            node->left_child->id = id_counter; id_counter++;
-            node->left_child->kind = "number";
-            node->left_child->str_value = to_string(l.num_value);
-            node->left_child->left_child = nullptr; node->left_child->right_child = nullptr;
-            node->right_child->id = id_counter; id_counter++;
-            node->right_child->kind = "number";
-            node->right_child->str_value = to_string(r.num_value);
-            node->right_child->left_child = nullptr; node->right_child->right_child = nullptr;
+            build_number_left(node, l);
+            build_number_right(node, r);
         } else if (l.kind == "number" && r.kind == "math") {
-            node->left_child->id = id_counter; id_counter++;
-            node->left_child->kind = "number";
-            node->left_child->str_value = to_string(l.num_value);
-            node->left_child->left_child = nullptr; node->left_child->right_child = nullptr;
-            node->right_child->id = id_counter; id_counter++;
-            node->right_child->kind = "operation";
-            auto root = generate_kid(tokenize(r.str_value));
-            string opt = root.first.back().str_value;
-            root.first.pop_back();
-            node->right_child->str_value = opt;
-            buildTree(node->right_child, root.first, root.second);
+            build_number_left(node, l);
+            build_tree_right(node, r);
         } else if (l.kind == "math" && r.kind == "number") {
-            node->right_child->id = id_counter; id_counter++;
-            node->right_child->kind = "number";
-            node->right_child->str_value = to_string(r.num_value);
-            node->right_child->right_child = nullptr; node->right_child->right_child = nullptr;
-            node->left_child->id = id_counter; id_counter++;
-            node->left_child->kind = "operation";
-            auto root = generate_kid(tokenize(l.str_value));
-            string opt = root.first.back().str_value;
-            root.first.pop_back();
-            node->left_child->str_value = opt;
-            buildTree(node->left_child, root.first, root.second);
+            build_tree_left(node, l);
+            build_number_right(node, r);
+        } else {
+            build_tree_left(node, l);
+            build_tree_right(node, r);
         }
     } else if (left.size() == 1) {
         Token l = left[0];
         if (l.kind == "number") {
-            node->left_child->id = id_counter; id_counter++;
-            node->left_child->kind = "number";
-            node->left_child->str_value = to_string(l.num_value);
-            node->left_child->left_child = nullptr; node->left_child->right_child = nullptr;
+            build_number_left(node, l);
         } else {
-            node->left_child->id = id_counter; id_counter++;
-            node->left_child->kind = "operation";
-            auto root = generate_kid(tokenize(l.str_value));
-            string opt = root.first.back().str_value;
-            root.first.pop_back();
-            node->left_child->str_value = opt;
-            buildTree(node->left_child, root.first, root.second);
+            build_tree_left(node, l);
         }
         node->right_child->id = id_counter; id_counter++;
         node->right_child->kind = "operation";
@@ -222,18 +222,9 @@ void buildTree(Node* node, vector<Token> left, vector<Token> right) {
         buildTree(node->left_child, root.first, root.second);
         Token r = right[0];
         if (r.kind == "number") {
-            node->right_child->id = id_counter; id_counter++;
-            node->right_child->kind = "number";
-            node->right_child->str_value = to_string(r.num_value);
-            node->right_child->right_child = nullptr; node->right_child->left_child = nullptr;
+            build_number_right(node, r);
         } else {
-            node->right_child->id = id_counter; id_counter++;
-            node->right_child->kind = "operation";
-            auto root = generate_kid(tokenize(r.str_value));
-            string opt = root.first.back().str_value;
-            root.first.pop_back();
-            node->right_child->str_value = opt;
-            buildTree(node->right_child, root.first, root.second);
+            build_tree_right(node, r);
         }
     } else {
         node->left_child->id = id_counter; id_counter++;
