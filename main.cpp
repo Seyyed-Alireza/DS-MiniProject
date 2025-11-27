@@ -186,65 +186,8 @@ int main() {
 
     bool open_parentheses = false;
 
-    vector<Token> tokens;
+    vector<Token> tokens = tokenize(result);
 
-    int index = 0;
-    while (index < result.length()) {
-
-        if (result[index] == '+' || result[index] == '-' || result[index] == '*' || result[index] == '/' || result[index] == '^') {
-            Token new_token;
-            new_token.kind = "operation";
-            new_token.str_value = result[index];
-            new_token.num_value = 0;
-            tokens.push_back(new_token);
-            index++;
-            continue;
-        }
-
-        if ('0' <= result[index] && result[index] <= '9') {
-            string new_number = newNumberValue(index, result);
-            Token new_token;
-            new_token.kind = "number";
-            new_token.str_value = "";
-            new_token.num_value = float(stoi(new_number));
-            tokens.push_back(new_token);
-            continue;
-        }
-
-        if (result[index] == '(') {
-            string new_value = newParenthesesValue(index, result);
-            Token new_token;
-            new_token.kind = "math";
-            new_token.str_value = new_value;
-            new_token.num_value = 0;
-            tokens.push_back(new_token);
-            continue;
-        }
-
-        if (result[index] == '$') {
-            index++;
-            if (result[index] == '(') {
-                string new_value = "$(";
-                new_value += newParenthesesValue(index, result);
-                new_value += ')';
-                Token new_token;
-                new_token.kind = "math";
-                new_token.str_value = new_value;
-                new_token.num_value = 0;
-                tokens.push_back(new_token);
-            } else {
-                string new_number = newNumberValue(index, result);
-                Token new_token;
-                new_token.kind = "number";
-                new_token.str_value = "";
-                new_token.num_value = sqrt(stoi(new_number));
-                tokens.push_back(new_token);
-            }
-            continue;
-        }
-
-        index++;
-    }
     // auto res = generate_kid(tokens);
     // vector<Token> v1 = res.first;
     // vector<Token> v2 = res.second;
@@ -258,11 +201,11 @@ int main() {
     //     else cout << v2[i].str_value << ' ';
     // }
     // cout << endl;
-    // cout << result << endl;
-    // for (int i = 0; i < tokens.size(); i++) {
-    //     if (tokens[i].kind == "number") cout << tokens[i].num_value << ' ';
-    //     else cout << tokens[i].str_value << ' ';
-    // }
+    cout << result << endl;
+    for (int i = 0; i < tokens.size(); i++) {
+        if (tokens[i].kind == "number") cout << tokens[i].num_value << ' ';
+        else cout << tokens[i].str_value << ' ';
+    }
     ofstream file("tree.dot");
     auto root = generate_kid(tokens);
     vector<Token> left_ch = root.first;
