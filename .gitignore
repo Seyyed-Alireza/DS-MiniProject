@@ -3,3 +3,4 @@ test.cpp
 .vscode/
 main.exe
 test.exe
+tree.dot

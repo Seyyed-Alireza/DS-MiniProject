@@ -3,6 +3,7 @@
 #include <string>
 #include <cmath>
 #include <utility>
+#include <fstream>
 using namespace std;
 // sample input: (++2 + 3 / 22) ++-+- √3 * (+90 - 22 / 2) ++-+- 5 * √(3+2)
 
@@ -64,10 +65,10 @@ string newParenthesesValue(int& index, string result) {
     new_value.pop_back();
     return new_value;
 }
-void build_tree(vector<Token> tokens) {
-    generate_kid();
+// void build_tree(vector<Token> tokens) {
+//     generate_kid();
 
-}
+// }
 int main() {
     operation['$' - 36] = 6;
     operation['+' - 36] = 1;
@@ -199,10 +200,11 @@ int main() {
     //     if (tokens[i].kind == "number") cout << tokens[i].num_value << ' ';
     //     else cout << tokens[i].str_value << ' ';
     // }
-    ofstream file("tree");
+    int counter = 0;
+    ofstream file("tree.dot");
     auto root = generate_kid(tokens);
     vector<Token> left_ch = root.first;
     vector<Token> right_ch = root.second;
-    
+    file << left_ch.back().str_value << " [lablel\"" << counter << "\"]";
     return 0;
 }
