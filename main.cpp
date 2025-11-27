@@ -3,10 +3,13 @@
 #include <string>
 #include <cmath>
 #include <utility>
+#include <fstream>
+#include <cstdlib>
 using namespace std;
 // sample input: (++2 + 3 / 22) ++-+- √3 * (+90 - 22 / 2) ++-+- 5 * √(3+2)
 
 int operation[59];
+int id_counter = 1;
 
 struct Token {
     string kind;
@@ -21,7 +24,7 @@ pair<vector<Token>, vector<Token>> generate_kid (vector<Token> tokens) {
         if (tokens[i].kind != "operation") {
             continue;
         }
-        if (operation[tokens[i].str_value[0] - 36] <= operation[min_op - 36]) {
+        if (operation[tokens[i].str_value[0] - 36] < operation[min_op - 36]) {
             min_op = tokens[i].str_value[0];
             min_op_index = i;
         }
@@ -102,20 +105,35 @@ vector<Token> tokenize(string math) {
         if (math[index] == '$') {
             index++;
             if (math[index] == '(') {
-                string new_value = "$(";
-                new_value += newParenthesesValue(index, math);
-                new_value += ')';
+                // string new_value = "$(";
+                string new_value = newParenthesesValue(index, math);
+                // new_value += ')';
                 Token new_token;
                 new_token.kind = "math";
                 new_token.str_value = new_value;
                 new_token.num_value = 0;
+                tokens.push_back(new_token);
+                new_token.kind = "operation";
+                new_token.str_value = "$";
+                tokens.push_back(new_token);
+                new_token.kind = "number";
+                new_token.str_value = "";
+                new_token.num_value = 0.5;
                 tokens.push_back(new_token);
             } else {
                 string new_number = newNumberValue(index, math);
                 Token new_token;
                 new_token.kind = "number";
                 new_token.str_value = "";
-                new_token.num_value = sqrt(stoi(new_number));
+                new_token.num_value = stoi(new_number);
+                tokens.push_back(new_token);
+                new_token.kind = "operation";
+                new_token.str_value = "$";
+                new_token.num_value = 0;
+                tokens.push_back(new_token);
+                new_token.kind = "number";
+                new_token.str_value = "";
+                new_token.num_value = 0.5;
                 tokens.push_back(new_token);
             }
             continue;
@@ -132,6 +150,128 @@ vector<Token> tokenize(string math) {
 
 // }
 
+void buildTree(Node* node, vector<Token> left, vector<Token> right) {
+    node->left_child = new Node();
+    node->right_child = new Node();
+    if (left.size() == 1 && right.size() == 1) {
+        Token l = left[0], r = right[0];
+        if (l.kind == "number" && r.kind == "number") {
+            node->left_child->id = id_counter; id_counter++;
+            node->left_child->kind = "number";
+            node->left_child->str_value = to_string(l.num_value);
+            node->left_child->left_child = nullptr; node->left_child->right_child = nullptr;
+            node->right_child->id = id_counter; id_counter++;
+            node->right_child->kind = "number";
+            node->right_child->str_value = to_string(r.num_value);
+            node->right_child->left_child = nullptr; node->right_child->right_child = nullptr;
+        } else if (l.kind == "number" && r.kind == "math") {
+            node->left_child->id = id_counter; id_counter++;
+            node->left_child->kind = "number";
+            node->left_child->str_value = to_string(l.num_value);
+            node->left_child->left_child = nullptr; node->left_child->right_child = nullptr;
+            node->right_child->id = id_counter; id_counter++;
+            node->right_child->kind = "operation";
+            auto root = generate_kid(tokenize(r.str_value));
+            string opt = root.first.back().str_value;
+            root.first.pop_back();
+            node->right_child->str_value = opt;
+            buildTree(node->right_child, root.first, root.second);
+        } else if (l.kind == "math" && r.kind == "number") {
+            node->right_child->id = id_counter; id_counter++;
+            node->right_child->kind = "number";
+            node->right_child->str_value = to_string(r.num_value);
+            node->right_child->right_child = nullptr; node->right_child->right_child = nullptr;
+            node->left_child->id = id_counter; id_counter++;
+            node->left_child->kind = "operation";
+            auto root = generate_kid(tokenize(l.str_value));
+            string opt = root.first.back().str_value;
+            root.first.pop_back();
+            node->left_child->str_value = opt;
+            buildTree(node->left_child, root.first, root.second);
+        }
+    } else if (left.size() == 1) {
+        Token l = left[0];
+        if (l.kind == "number") {
+            node->left_child->id = id_counter; id_counter++;
+            node->left_child->kind = "number";
+            node->left_child->str_value = to_string(l.num_value);
+            node->left_child->left_child = nullptr; node->left_child->right_child = nullptr;
+        } else {
+            node->left_child->id = id_counter; id_counter++;
+            node->left_child->kind = "operation";
+            auto root = generate_kid(tokenize(l.str_value));
+            string opt = root.first.back().str_value;
+            root.first.pop_back();
+            node->left_child->str_value = opt;
+            buildTree(node->left_child, root.first, root.second);
+        }
+        node->right_child->id = id_counter; id_counter++;
+        node->right_child->kind = "operation";
+        auto root = generate_kid(right);
+        string opt = root.first.back().str_value;
+        root.first.pop_back();
+        node->right_child->str_value = opt;
+        buildTree(node->right_child, root.first, root.second);
+    } else if (right.size() == 1) {
+        node->left_child->id = id_counter; id_counter++;
+        node->left_child->kind = "operation";
+        auto root = generate_kid(left);
+        string opt = root.first.back().str_value;
+        root.first.pop_back();
+        node->left_child->str_value = opt;
+        buildTree(node->left_child, root.first, root.second);
+        Token r = right[0];
+        if (r.kind == "number") {
+            node->right_child->id = id_counter; id_counter++;
+            node->right_child->kind = "number";
+            node->right_child->str_value = to_string(r.num_value);
+            node->right_child->right_child = nullptr; node->right_child->left_child = nullptr;
+        } else {
+            node->right_child->id = id_counter; id_counter++;
+            node->right_child->kind = "operation";
+            auto root = generate_kid(tokenize(r.str_value));
+            string opt = root.first.back().str_value;
+            root.first.pop_back();
+            node->right_child->str_value = opt;
+            buildTree(node->right_child, root.first, root.second);
+        }
+    } else {
+        node->left_child->id = id_counter; id_counter++;
+        node->left_child->kind = "operation";
+        auto root1 = generate_kid(left);
+        string opt1 = root1.first.back().str_value;
+        root1.first.pop_back();
+        node->left_child->str_value = opt1;
+        buildTree(node->left_child, root1.first, root1.second);
+        node->right_child->id = id_counter; id_counter++;
+        node->right_child->kind = "operation";
+        auto root2 = generate_kid(right);
+        string opt2 = root2.first.back().str_value;
+        root2.first.pop_back();
+        node->right_child->str_value = opt2;
+        buildTree(node->right_child, root2.first, root2.second);
+    }
+}
+
+void writeFile1(ofstream& file, Node* node) {
+    if (node == nullptr) return;
+    file << node->id << " [label=\"" << node->str_value << "\";]" << endl;
+    writeFile1(file, node->left_child);
+    writeFile1(file, node->right_child);
+}
+
+void writeFile2(ofstream& file, Node* node) {
+    if (node == nullptr) return;
+    if (node->left_child != nullptr) {
+        file << node->id << " -> " << node->left_child->id << ";";
+    }
+    if (node->right_child != nullptr) {
+        file << node->id << " -> " << node->right_child->id << ";";
+    }
+    writeFile2(file, node->left_child);
+    writeFile2(file, node->right_child);
+}
+
 int main() {
     operation['$' - 36] = 6;
     operation['+' - 36] = 1;
@@ -139,7 +279,8 @@ int main() {
     operation['*' - 36] = 2;
     operation['/' - 36] = 2;
     operation['^' - 36] = 6;
-    operation['^' - 1] = 10;
+    operation['!' - 36] = 6;
+    operation[']' - 36] = 10;
 
     string input; getline(cin, input);
     regex sqrt_pattern("\xFB");
@@ -206,10 +347,33 @@ int main() {
         if (tokens[i].kind == "number") cout << tokens[i].num_value << ' ';
         else cout << tokens[i].str_value << ' ';
     }
-    ofstream file("tree.dot");
     auto root = generate_kid(tokens);
     vector<Token> left_ch = root.first;
     vector<Token> right_ch = root.second;
+    string opt = root.first.back().str_value;
+    root.first.pop_back();
+    Node* head = new Node();
+    head->id = id_counter; id_counter++;
+    head->kind = "operation";
+    head->str_value = opt;
+    cout << endl;
+    buildTree(head, root.first, root.second);
+    Node* x = new Node();
+    x = head;
+    cout << endl;
+    while (true) {
+        cout << x->kind << ' ' << x->str_value << endl;
+        x = x->right_child;
+        if (x == nullptr) break;
+    }
+    ofstream file("tree.dot");
+    file << "digraph G {\n";
+    writeFile1(file, head);
+    writeFile2(file, head);
+    file << "}\n";
+    file.close();
+    system("dot -Tpng tree.dot -o graph.png");
+
     
     return 0;
 }
