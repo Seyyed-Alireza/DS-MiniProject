@@ -32,8 +32,6 @@ pair<vector<Token>, vector<Token>> generate_kid (vector<Token> tokens) {
     return make_pair(vector<Token>(tokens.begin() + 0, tokens.begin() + min_op_index + 1), vector<Token>(tokens.begin() + min_op_index + 1, tokens.begin() + tokens.size()));
 }
 
-
-
 struct Node {
     int id;
     string kind;
@@ -277,8 +275,7 @@ int main() {
     regex sqrt_pattern("\xFB");
     input = regex_replace(input, sqrt_pattern, "$");
     input.erase(remove(input.begin(), input.end(), ' '), input.end());
-    // regex pattern("([+-]{2,})([A-Za-z0-9$])");
-    // cout << input << endl;
+
     regex pattern("([+-]{2,})");
     
     string result;
@@ -289,14 +286,12 @@ int main() {
     for (auto now = begin; now != end; ++now) {
         smatch m = *now;
 
-        // cout << "positions: " << m.position() << ' ' << m.length() << ' ' << last_index << endl;
         result += input.substr(last_index, m.position() - last_index);
 
         string signs = m[1].str();
         size_t next_index = m.position() + m.length();
         if (next_index >= input.size()) continue;
         char next_char = input[next_index];
-        // cout << signs << ' ' << next_char  << ' ' << result << endl;
 
         int minus_count = count(signs.begin(), signs.end(), '-');
 
@@ -308,31 +303,12 @@ int main() {
         last_index = m.position() + m.length() + 1;
     }
 
-    // cout << endl << input.substr(last_index);
     result += input.substr(last_index);
-    // cout << result << endl;
     regex new_pattern("\\(\\+(\\d+)");
-
     result = regex_replace(result, new_pattern, "($1");
-    // cout << result << endl;
-
-    bool open_parentheses = false;
 
     vector<Token> tokens = tokenize(result);
 
-    // auto res = generate_kid(tokens);
-    // vector<Token> v1 = res.first;
-    // vector<Token> v2 = res.second;
-    // for (int i = 0; i < v1.size(); i++) {
-    //     if (v1[i].kind == "number") cout << v1[i].num_value << ' ';
-    //     else cout << v1[i].str_value << ' ';
-    // }
-    // cout << endl;
-    // for (int i = 0; i < v2.size(); i++) {
-    //     if (v2[i].kind == "number") cout << v2[i].num_value << ' ';
-    //     else cout << v2[i].str_value << ' ';
-    // }
-    // cout << endl;
     cout << result << endl;
     for (int i = 0; i < tokens.size(); i++) {
         if (tokens[i].kind == "number") cout << tokens[i].num_value << ' ';
@@ -347,16 +323,10 @@ int main() {
     head->id = id_counter; id_counter++;
     head->kind = "operation";
     head->str_value = opt;
-    cout << endl;
     buildTree(head, root.first, root.second);
     Node* x = new Node();
     x = head;
     cout << endl;
-    while (true) {
-        cout << x->kind << ' ' << x->str_value << endl;
-        x = x->right_child;
-        if (x == nullptr) break;
-    }
     ofstream file("tree.dot");
     file << "digraph G {\n";
     writeFile1(file, head);
