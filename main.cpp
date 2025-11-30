@@ -161,6 +161,11 @@ void build_tree_left(Node* node, Token l) {
     node->left_child->id = id_counter; id_counter++;
     node->left_child->kind = "operation";
     auto root = generate_kid(tokenize(l.str_value));
+    vector<Token> x = tokenize(l.str_value);
+    for (int i = 0; i < x.size(); i++) {
+        if (x[i].kind == "number") cout << x[i].num_value << ' ';
+        else cout << x[i].str_value << ' ';
+    } cout << endl;
     string opt = root.first.back().str_value;
     root.first.pop_back();
     node->left_child->str_value = opt;
@@ -242,8 +247,16 @@ void buildTree(Node* node, vector<Token> left, vector<Token> right) {
     }
 }
 
+void deleteZero(Node* node) {
+    while (node->str_value[node->str_value.length() - 1] == '0') {
+        node->str_value.pop_back();
+    }
+    if (node->str_value[node->str_value.length() - 1] == '.') node->str_value.pop_back();
+}
+
 void writeFile1(ofstream& file, Node* node) {
     if (node == nullptr) return;
+    if (node->str_value.find('.') != string::npos) deleteZero(node);
     file << node->id << " [label=\"" << node->str_value << "\";]" << endl;
     writeFile1(file, node->left_child);
     writeFile1(file, node->right_child);
@@ -273,16 +286,16 @@ float conculate (Node* root) {
     if (root->str_value == "*") return left * right;
     if (root->str_value == "/") return left / right;
     if (root->str_value == "$" || root->str_value == "^") return pow(left, right);
+    return 0;
 }
 
 int main() {
-    operation['$' - 36] = 6;
+    operation['$' - 36] = 7;
     operation['+' - 36] = 1;
     operation['-' - 36] = 1;
     operation['*' - 36] = 2;
     operation['/' - 36] = 2;
     operation['^' - 36] = 6;
-    operation['!' - 36] = 6;
     operation[']' - 36] = 10;
 
     string input; getline(cin, input);
@@ -341,6 +354,7 @@ int main() {
     Node* x = new Node();
     x = head;
     cout << endl;
+    cout << "now";
     ofstream file("tree.dot");
     file << "digraph G {\n";
     writeFile1(file, head);
