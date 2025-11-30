@@ -261,6 +261,20 @@ void writeFile2(ofstream& file, Node* node) {
     writeFile2(file, node->right_child);
 }
 
+float conculate (Node* root) {
+    if (!root->left_child && !root->right_child) {
+        return stof(root->str_value);
+    }
+    float left, right;
+    left = conculate(root->left_child);
+    right = conculate(root->right_child);
+    if (root->str_value == "+") return left + right;
+    if (root->str_value == "-") return left - right;
+    if (root->str_value == "*") return left * right;
+    if (root->str_value == "/") return left / right;
+    if (root->str_value == "$" || root->str_value == "^") return pow(left, right);
+}
+
 int main() {
     operation['$' - 36] = 6;
     operation['+' - 36] = 1;
@@ -334,7 +348,7 @@ int main() {
     file << "}\n";
     file.close();
     system("dot -Tpng tree.dot -o graph.png");
-
+    cout << conculate(head);
     
     return 0;
 }
