@@ -271,13 +271,13 @@ void writeFile2(ofstream& file, Node* node) {
     writeFile2(file, node->right_child);
 }
 
-float conculate (Node* root) {
+float calculate (Node* root) {
     if (!root->left_child && !root->right_child) {
         return stof(root->str_value);
     }
     float left, right;
-    left = conculate(root->left_child);
-    right = conculate(root->right_child);
+    left = calculate(root->left_child);
+    right = calculate(root->right_child);
     if (root->str_value == "+") return left + right;
     if (root->str_value == "-") return left - right;
     if (root->str_value == "*") return left * right;
@@ -335,7 +335,6 @@ int main() {
     system("cls");
     cout << "Please enter a valid mathematical expression: ";
     string input; getline(cin, input);
-    cout << endl;
     regex sqrt_pattern("\xFB");
     input = regex_replace(input, sqrt_pattern, "$");
     input.erase(remove(input.begin(), input.end(), ' '), input.end());
@@ -389,6 +388,8 @@ int main() {
     head->str_value = opt;
     buildTree(head, root.first, root.second);
     cout << "Building tree completed" << endl;
+    cout << "Final result --> " << calculate(head) << endl;
+    cout << "drawing graphs..." << endl;
 
     path pictures = current_path() / "pictures";
     if (!exists(pictures)) {
@@ -396,7 +397,7 @@ int main() {
     }
     drawTree(head);
     calculateWithSteps(head, head);
-    cout << "Final result --> " << conculate(head);
+    cout << "All graphs were drawn";
     
     return 0;
 }
