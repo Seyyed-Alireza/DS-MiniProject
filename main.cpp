@@ -5,7 +5,11 @@
 #include <utility>
 #include <fstream>
 #include <cstdlib>
+#include <filesystem>
+
 using namespace std;
+using namespace std::filesystem;
+
 // sample input: (++2 + 3 / 22) ++-+- √3 * (+90 - 22 / 2) ++-+- 5 * √(3+2)
 
 int operation[59];
@@ -134,10 +138,8 @@ vector<Token> tokenize(string math) {
             }
             continue;
         }
-
         index++;
     }
-
     return tokens;
 }
 
@@ -161,11 +163,6 @@ void build_tree_left(Node* node, Token l) {
     node->left_child->id = id_counter; id_counter++;
     node->left_child->kind = "operation";
     auto root = generate_kid(tokenize(l.str_value));
-    vector<Token> x = tokenize(l.str_value);
-    for (int i = 0; i < x.size(); i++) {
-        if (x[i].kind == "number") cout << x[i].num_value << ' ';
-        else cout << x[i].str_value << ' ';
-    } cout << endl;
     string opt = root.first.back().str_value;
     root.first.pop_back();
     node->left_child->str_value = opt;
@@ -289,6 +286,44 @@ float conculate (Node* root) {
     return 0;
 }
 
+int graph_file_count = 1;
+void drawTree(Node* head) {
+    string picture_name = "graph" + to_string(graph_file_count); graph_file_count++;
+    path base_path = current_path();
+    path tree_path = base_path / "tree.dot";
+    path picture_path = base_path / "pictures" / picture_name;
+    ofstream file("tree.dot");
+    file << "digraph G {\n";
+    writeFile1(file, head);
+    writeFile2(file, head);
+    file << "}\n";
+    file.close();
+    string command = "dot -Tpng \"" + tree_path.string() + "\" -o \"" + picture_path.string() + ".png\"";
+    system(command.c_str());
+
+    cout << "Graph of step " << graph_file_count - 1 << " created" << endl;
+}
+
+void calculateWithSteps(Node* root, Node* main) {
+    if (root->left_child->kind != "number") calculateWithSteps(root->left_child, main);
+    if (root->right_child->kind != "number") calculateWithSteps(root->right_child, main);
+    if (root->str_value == "+") root->str_value = to_string(stof(root->left_child->str_value) + stof(root->right_child->str_value));
+    if (root->str_value == "-") root->str_value = to_string(stof(root->left_child->str_value) - stof(root->right_child->str_value));
+    if (root->str_value == "*") root->str_value = to_string(stof(root->left_child->str_value) * stof(root->right_child->str_value));
+    if (root->str_value == "/") root->str_value = to_string(stof(root->left_child->str_value) / stof(root->right_child->str_value));
+    if (root->str_value == "$" || root->str_value == "^") root->str_value = to_string(pow(stof(root->left_child->str_value), stof(root->right_child->str_value)));
+
+    Node* temp1 = root->left_child;
+    Node* temp2 = root->right_child;
+    root->left_child = nullptr;
+    root->right_child = nullptr;
+    delete temp1;
+    delete temp2;
+
+    drawTree(main);
+    return;
+}
+
 int main() {
     operation['$' - 36] = 7;
     operation['+' - 36] = 1;
@@ -297,8 +332,10 @@ int main() {
     operation['/' - 36] = 2;
     operation['^' - 36] = 6;
     operation[']' - 36] = 10;
-
+    system("cls");
+    cout << "Please enter a valid mathematical expression: ";
     string input; getline(cin, input);
+    cout << endl;
     regex sqrt_pattern("\xFB");
     input = regex_replace(input, sqrt_pattern, "$");
     input.erase(remove(input.begin(), input.end(), ' '), input.end());
@@ -336,11 +373,11 @@ int main() {
 
     vector<Token> tokens = tokenize(result);
 
-    cout << result << endl;
-    for (int i = 0; i < tokens.size(); i++) {
-        if (tokens[i].kind == "number") cout << tokens[i].num_value << ' ';
-        else cout << tokens[i].str_value << ' ';
-    }
+    cout << "Your input after normalising: " << result << endl;
+    // for (int i = 0; i < tokens.size(); i++) {
+    //     if (tokens[i].kind == "number") cout << tokens[i].num_value << ' ';
+    //     else cout << tokens[i].str_value << ' ';
+    // }
     auto root = generate_kid(tokens);
     vector<Token> left_ch = root.first;
     vector<Token> right_ch = root.second;
@@ -351,18 +388,15 @@ int main() {
     head->kind = "operation";
     head->str_value = opt;
     buildTree(head, root.first, root.second);
-    Node* x = new Node();
-    x = head;
-    cout << endl;
-    cout << "now";
-    ofstream file("tree.dot");
-    file << "digraph G {\n";
-    writeFile1(file, head);
-    writeFile2(file, head);
-    file << "}\n";
-    file.close();
-    system("dot -Tpng tree.dot -o graph.png");
-    cout << conculate(head);
+    cout << "Building tree completed" << endl;
+
+    path pictures = current_path() / "pictures";
+    if (!exists(pictures)) {
+        create_directories(pictures);
+    }
+    drawTree(head);
+    calculateWithSteps(head, head);
+    cout << "Final result --> " << conculate(head);
     
     return 0;
 }
