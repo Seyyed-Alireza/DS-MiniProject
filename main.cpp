@@ -271,21 +271,6 @@ void writeFile2(ofstream& file, Node* node) {
     writeFile2(file, node->right_child);
 }
 
-float calculate (Node* root) {
-    if (!root->left_child && !root->right_child) {
-        return stof(root->str_value);
-    }
-    float left, right;
-    left = calculate(root->left_child);
-    right = calculate(root->right_child);
-    if (root->str_value == "+") return left + right;
-    if (root->str_value == "-") return left - right;
-    if (root->str_value == "*") return left * right;
-    if (root->str_value == "/") return left / right;
-    if (root->str_value == "$" || root->str_value == "^") return pow(left, right);
-    return 0;
-}
-
 int graph_file_count = 1;
 void drawTree(Node* head) {
     string picture_name = "graph" + to_string(graph_file_count); graph_file_count++;
@@ -302,6 +287,38 @@ void drawTree(Node* head) {
     system(command.c_str());
 
     cout << "Graph of step " << graph_file_count - 1 << " created" << endl;
+}
+
+void calculate (Node* root, Node* main) {
+    if (!root->left_child && !root->right_child) {
+        return;
+    }
+    calculate(root->left_child, main);
+    calculate(root->right_child, main);
+    if (root->str_value == "+") {
+        root->str_value = to_string(stof(root->left_child->str_value) + stof(root->right_child->str_value));
+    }
+    else if (root->str_value == "-") {
+        root->str_value = to_string(stof(root->left_child->str_value) - stof(root->right_child->str_value));
+    }
+    else if (root->str_value == "*") {
+        root->str_value = to_string(stof(root->left_child->str_value) * stof(root->right_child->str_value));
+    }
+    else if (root->str_value == "/") {
+        root->str_value = to_string(stof(root->left_child->str_value) / stof(root->right_child->str_value));
+    }
+    else if (root->str_value == "$" || root->str_value == "^") {
+        root->str_value = to_string(pow(stof(root->left_child->str_value), stof(root->right_child->str_value)));
+    }
+    Node* temp1 = root->left_child;
+    Node* temp2 = root->right_child;
+    root->left_child = nullptr;
+    root->right_child = nullptr;
+    delete temp1;
+    delete temp2;
+
+    drawTree(main);
+    return;
 }
 
 void calculateWithSteps(Node* root, Node* main) {
@@ -388,16 +405,15 @@ int main() {
     head->str_value = opt;
     buildTree(head, root.first, root.second);
     cout << "Building tree completed" << endl;
-    cout << "Final result --> " << calculate(head) << endl;
-    cout << "drawing graphs..." << endl;
-
     path pictures = current_path() / "pictures";
     if (!exists(pictures)) {
         create_directories(pictures);
     }
+    cout << "Drawing trees and calculating..." <<endl;
     drawTree(head);
-    calculateWithSteps(head, head);
-    cout << "All graphs were drawn";
+    calculate(head, head);
+    cout << "All graphs were drawn" << endl;
+    cout << "Final result --> " << head->str_value << endl;
     
     return 0;
 }
