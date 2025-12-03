@@ -6,7 +6,7 @@
 #include <fstream>
 #include <cstdlib>
 #include <filesystem>
-
+#include <thread>
 using namespace std;
 using namespace std::filesystem;
 
@@ -378,8 +378,31 @@ void calculate (Node* root, Node* main) {
     drawTree(main);
     return;
 }
-
+int valid_input_operation(string operation) {
+    int value;
+    while (true) {
+        cout << "please enter the value of the " << operation << ":\n";
+        cin >> value;
+        if (cin.fail()) {
+            cout << "value must be integar";
+            cin.clear();  
+            cin.ignore(numeric_limits<std::streamsize>::max(), '\n');
+            this_thread::sleep_for(chrono::seconds(3));
+            system("cls");
+            continue;
+        }
+        if (value <= 0) {
+            cout << "value must be integer and positive";
+            this_thread::sleep_for(chrono::seconds(3));
+            system("cls");
+            continue;
+        }
+        system("cls");
+        return value;
+    }
+}
 int main() {
+    int operand;
     operation['$' - 36] = 7;
     operation['+' - 36] = 1;
     operation['-' - 36] = 1;
@@ -388,6 +411,56 @@ int main() {
     operation['^' - 36] = 6;
     operation[']' - 36] = 10;
     system("cls");
+    while(true) {
+        cout << "Do you want to enter the order of priority of the pragmatists?\n1. yes\n2. no (Default operands will be applied.)\n";
+        cin >> operand;
+        if (cin.fail()) {
+            cin.clear();  
+            cin.ignore(numeric_limits<std::streamsize>::max(), '\n');
+            cout << "you must be integer and enter 1 or 2." << endl;
+            this_thread::sleep_for(chrono::seconds(3));
+            system("cls");
+            continue;
+        }
+        if (operand != 1 && operand != 2) {
+            cout << "you must enter 1 or 2." << endl;
+            this_thread::sleep_for(chrono::seconds(3));
+            system("cls");
+            continue;
+        }
+    system("cls");
+    break;
+    }
+    if (operand == 1) {
+        int max_op;
+        int temp = valid_input_operation("+");
+        max_op = temp;
+        operation['+' - 36] = temp;
+        temp = valid_input_operation("-");
+        if (temp > max_op) max_op = temp;
+        operation['-' - 36] = temp;
+        temp = valid_input_operation("*");
+        if (temp > max_op) max_op = temp;
+        operation['*' - 36] = temp;
+        temp = valid_input_operation("/");
+        if (temp > max_op) max_op = temp;
+        operation['/' - 36] = temp;
+        temp = valid_input_operation("^");
+        if (temp > max_op) max_op = temp;
+        operation['^' - 36] = temp;
+        temp = valid_input_operation("$");
+        if (temp > max_op) max_op = temp;
+        operation['$' - 36] = temp;
+        operation[']' - 36] = max_op + 1;
+    }
+
+    // char ops[6] = {'+', '-', '*', '/', '^', '$'};
+    // for (char c: ops) {
+    //     cout << operation[c - 36] << ' ';
+    // }
+    system("cls");
+    cin.clear();
+    cin.ignore(numeric_limits<std::streamsize>::max(), '\n');
     cout << "Please enter a valid mathematical expression: ";
     string input; getline(cin, input);
     regex sqrt_pattern("\xFB");
@@ -433,6 +506,7 @@ int main() {
     //     else cout << tokens[i].str_value << ' ';
     // }
     auto root = generate_kid(tokens);
+    cout << "here";
     vector<Token> left_ch = root.first;
     vector<Token> right_ch = root.second;
     string opt = root.first.back().str_value;
