@@ -381,7 +381,8 @@ void calculate (Node* root, Node* main) {
 int valid_input_operation(string operation) {
     int value;
     while (true) {
-        cout << "please enter the value of the " << operation << ":\n";
+        if (operation == "$") cout << "please enter the value of the \xFB:\n";
+        else cout << "please enter the value of the " << operation << ":\n";
         cin >> value;
         if (cin.fail()) {
             cout << "value must be integar";
