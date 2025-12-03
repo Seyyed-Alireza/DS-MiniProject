@@ -48,10 +48,12 @@ string newNumberValue(int& index, string result) {
     int start_number_index = index;
     string new_number = ""; new_number.push_back(result[index]);
     index++;
-    while ('0' <= result[index] && result[index] <= '9') {
+    while (('0' <= result[index] && result[index] <= '9') || result[index] == '.') {
         new_number.push_back(result[index]);
         index++;
     }
+    if (new_number[0] == '.') new_number = '0' + new_number;
+    else if (new_number[new_number.length() - 1] == '.') new_number += '0';
     return new_number;
 }
 
@@ -84,12 +86,12 @@ vector<Token> tokenize(string math) {
             continue;
         }
 
-        if ('0' <= math[index] && math[index] <= '9') {
+        if (('0' <= math[index] && math[index] <= '9') || math[index] == '.') {
             string new_number = newNumberValue(index, math);
             Token new_token;
             new_token.kind = "number";
             new_token.str_value = "";
-            new_token.num_value = float(stoi(new_number));
+            new_token.num_value = stof(new_number);
             tokens.push_back(new_token);
             continue;
         }
@@ -406,9 +408,11 @@ int main() {
     buildTree(head, root.first, root.second);
     cout << "Building tree completed" << endl;
     path pictures = current_path() / "pictures";
-    if (!exists(pictures)) {
-        create_directories(pictures);
+    if (exists(pictures)) {
+        remove_all(pictures);
     }
+    create_directory(pictures);
+    
     cout << "Drawing trees and calculating..." <<endl;
     drawTree(head);
     calculate(head, head);
