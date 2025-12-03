@@ -11,6 +11,7 @@ using namespace std;
 using namespace std::filesystem;
 
 // sample input: (++2 + 3 / 22) ++-+- √3 * (+90 - 22 / 2) ++-+- 5 * √(3+2)
+// long input: (++2 + 3 / 22) ++-+- √3 * ((++2 + 3 / 22) ++-+- √3 * (+90 - 22 / 2) ++-+- 5 * √(3+2) - 22 / 2) ++-+- 5 * √(3+2) + ((++2 + 3 / 22) ++-+- √3 * (+90 - 22 / 2) ++-+- 5 * √(3+2))
 
 int operation[59];
 int id_counter = 1;
@@ -253,12 +254,60 @@ void deleteZero(Node* node) {
     if (node->str_value[node->str_value.length() - 1] == '.') node->str_value.pop_back();
 }
 
-void writeFile1(ofstream& file, Node* node) {
+int before_r = 200, before_g = 200, before_b = 200;
+string randomLightColor() {
+    random_device rd;
+    mt19937 gen(rd());
+    uniform_int_distribution<int> dist(128, 255);
+
+    int r, b, g;
+    do r = dist(gen);
+    while (abs(r - before_r) < 20);
+
+    do g = dist(gen);
+    while (abs(g - before_g) < 20);
+
+    do b = dist(gen);
+    while (abs(b - before_b) < 20);
+
+    before_r = r; before_g = g; before_b = b;
+    
+    char buf[8];
+    snprintf(buf, sizeof(buf), "#%02X%02X%02X", r, g, b);
+    return string(buf);
+}
+
+bool isDarkColor(const string& hexColor) {
+    if (hexColor.size() != 7 || hexColor[0] != '#') {
+        cerr << "Invalid color format. Use #RRGGBB.\n";
+        return false;
+    }
+
+    int r = stoi(hexColor.substr(1,2), nullptr, 16);
+    int g = stoi(hexColor.substr(3,2), nullptr, 16);
+    int b = stoi(hexColor.substr(5,2), nullptr, 16);
+
+    double L = 0.299*r + 0.587*g + 0.114*b;
+
+    return L < 128;
+}
+
+vector<string> level_colors;
+vector<string> level_colors_default = {"#ffffff", "#fc3567", "#e81416", "#ffa500", "#faeb36", "#79c314", "#487de7", "#4b369d", "#70369d"};
+void writeFile1(ofstream& file, Node* node, int level) {
     if (node == nullptr) return;
     if (node->str_value.find('.') != string::npos) deleteZero(node);
-    file << node->id << " [label=\"" << node->str_value << "\";]" << endl;
-    writeFile1(file, node->left_child);
-    writeFile1(file, node->right_child);
+    while (level_colors.size() <= level + 1) {
+        level_colors.push_back(randomLightColor());
+    }
+    string font_color = "#000000";
+    if ((isDarkColor(level_colors[level]))) font_color = "#ffffff";
+    
+    file << node->id << " [label=\"" << node->str_value << "\", fillcolor=\"" << level_colors[level] << "\", fontcolor=\"" << font_color << "\"]" << endl;
+    // color = randomLightColor();
+    level++;
+    writeFile1(file, node->left_child, level);
+    writeFile1(file, node->right_child, level);
 }
 
 void writeFile2(ofstream& file, Node* node) {
@@ -281,7 +330,14 @@ void drawTree(Node* head) {
     path picture_path = base_path / "pictures" / picture_name;
     ofstream file("tree.dot");
     file << "digraph G {\n";
-    writeFile1(file, head);
+    file << "graph [ dpi=120, rankdir=TB, bgcolor=\"#FAFAFA\", splines=true, nodesep=0.2, ranksep=0.5 ];\n";
+    file << "node [ shape=oval, style=filled, fontname=\"Calibri\", fontsize=24, penwidth=1.4, width=1, height=0.6, color=\"#7393B3\", fillcolor=\"#DDE7F0\", fontcolor=\"#2B3A42\" ];\n";
+    file << "edge [ color=\"#78909C\", penwidth=1, arrowhead=vee, arrowsize=1.0 ];\n";
+    string color = randomLightColor();
+    // level = 0;
+    level_colors.clear();
+    level_colors = level_colors_default;
+    writeFile1(file, head, 0);
     writeFile2(file, head);
     file << "}\n";
     file.close();
@@ -312,26 +368,6 @@ void calculate (Node* root, Node* main) {
     else if (root->str_value == "$" || root->str_value == "^") {
         root->str_value = to_string(pow(stof(root->left_child->str_value), stof(root->right_child->str_value)));
     }
-    Node* temp1 = root->left_child;
-    Node* temp2 = root->right_child;
-    root->left_child = nullptr;
-    root->right_child = nullptr;
-    delete temp1;
-    delete temp2;
-
-    drawTree(main);
-    return;
-}
-
-void calculateWithSteps(Node* root, Node* main) {
-    if (root->left_child->kind != "number") calculateWithSteps(root->left_child, main);
-    if (root->right_child->kind != "number") calculateWithSteps(root->right_child, main);
-    if (root->str_value == "+") root->str_value = to_string(stof(root->left_child->str_value) + stof(root->right_child->str_value));
-    if (root->str_value == "-") root->str_value = to_string(stof(root->left_child->str_value) - stof(root->right_child->str_value));
-    if (root->str_value == "*") root->str_value = to_string(stof(root->left_child->str_value) * stof(root->right_child->str_value));
-    if (root->str_value == "/") root->str_value = to_string(stof(root->left_child->str_value) / stof(root->right_child->str_value));
-    if (root->str_value == "$" || root->str_value == "^") root->str_value = to_string(pow(stof(root->left_child->str_value), stof(root->right_child->str_value)));
-
     Node* temp1 = root->left_child;
     Node* temp2 = root->right_child;
     root->left_child = nullptr;
