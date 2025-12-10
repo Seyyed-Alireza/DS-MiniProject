@@ -1,3 +1,5 @@
+// Group members: Seyyed Alireza Hosseini 403521231 - Arash Aghapour 403521051
+
 #include <bits/stdc++.h>
 #include <regex>
 #include <string>
@@ -7,10 +9,12 @@
 #include <cstdlib>
 #include <filesystem>
 #include <thread>
+#define _USE_MATH_DEFINES
 using namespace std;
 using namespace std::filesystem;
 
 // sample input: (++2 + 3 / 22) ++-+- √3 * (+90 - 22 / 2) ++-+- 5 * √(3+2)
+// sample input: sin(20+10) + cos(30* 2) + tan(√(45 * 45))
 // long input: (++2 + 3 / 22) ++-+- √3 * ((++2 + 3 / 22) ++-+- √3 * (+90 - 22 / 2) ++-+- 5 * √(3+2) - 22 / 2) ++-+- 5 * √(3+2) + ((++2 + 3 / 22) ++-+- √3 * (+90 - 22 / 2) ++-+- 5 * √(3+2))
 
 int operation[59];
@@ -34,7 +38,9 @@ pair<vector<Token>, vector<Token>> generate_kid (vector<Token> tokens) {
             min_op_index = i;
         }
     }
-    return make_pair(vector<Token>(tokens.begin() + 0, tokens.begin() + min_op_index + 1), vector<Token>(tokens.begin() + min_op_index + 1, tokens.begin() + tokens.size()));
+    vector<Token> left = vector<Token>(tokens.begin() + 0, tokens.begin() + min_op_index + 1);
+    vector<Token> right = vector<Token>(tokens.begin() + min_op_index + 1, tokens.begin() + tokens.size());
+    return make_pair(left, right);
 }
 
 struct Node {
@@ -62,14 +68,17 @@ string newParenthesesValue(int& index, string result) {
     string parentheses = "(";
     int start_parentheses_index = index;
     string new_value = "";
+    bool no_opt = true;
     index++;
     while (parentheses != "") {
+        if (!(('0' <= result[index] && result[index] <= '9') || result[index] == '.' || result[index] == '(' || result[index] == ')')) no_opt = false;
         new_value.push_back(result[index]);
         if (result[index] == '(') parentheses.push_back('(');
         else if (result[index] == ')') parentheses.pop_back();
         index++;
     }
     new_value.pop_back();
+    if (no_opt) return new_value + "n";
     return new_value;
 }
 
@@ -100,10 +109,18 @@ vector<Token> tokenize(string math) {
         if (math[index] == '(') {
             string new_value = newParenthesesValue(index, math);
             Token new_token;
-            new_token.kind = "math";
-            new_token.str_value = new_value;
-            new_token.num_value = 0;
-            tokens.push_back(new_token);
+            if (new_value[new_value.length() - 1] == 'n') {
+                new_value.pop_back();
+                new_token.kind = "number";
+                new_token.str_value = "";
+                new_token.num_value = stof(new_value);
+                tokens.push_back(new_token);
+            } else {
+                new_token.kind = "math";
+                new_token.str_value = new_value;
+                new_token.num_value = 0;
+                tokens.push_back(new_token);
+            }
             continue;
         }
 
@@ -112,12 +129,21 @@ vector<Token> tokenize(string math) {
             if (math[index] == '(') {
                 string new_value = newParenthesesValue(index, math);
                 Token new_token;
-                new_token.kind = "math";
-                new_token.str_value = new_value;
-                new_token.num_value = 0;
-                tokens.push_back(new_token);
+                if (new_value[new_value.length() - 1] == 'n') {
+                    new_value.pop_back();
+                    new_token.kind = "number";
+                    new_token.str_value = "";
+                    new_token.num_value = stof(new_value);
+                    tokens.push_back(new_token);
+                } else {
+                    new_token.kind = "math";
+                    new_token.str_value = new_value;
+                    new_token.num_value = 0;
+                    tokens.push_back(new_token);
+                }
                 new_token.kind = "operation";
                 new_token.str_value = "$";
+                new_token.num_value = 0;
                 tokens.push_back(new_token);
                 new_token.kind = "number";
                 new_token.str_value = "";
@@ -137,6 +163,45 @@ vector<Token> tokenize(string math) {
                 new_token.kind = "number";
                 new_token.str_value = "";
                 new_token.num_value = 0.5;
+                tokens.push_back(new_token);
+            }
+            continue;
+        }
+
+        char t = math[index];
+        char t2 = math[index + 2];
+        if (t == 's' || t == 'S' || t == 'c' || t == 'C' || t == 't' || t == 'T') {
+            index += 3;
+            if (math[index] == '(') {
+                string new_value = newParenthesesValue(index, math);
+                Token new_token;
+                if (new_value[new_value.length() - 1] == 'n') {
+                    new_value.pop_back();
+                    new_token.kind = "trigonometric";
+                    if (t == 's' || t == 'S') new_token.str_value = "sin" + new_value;
+                    else if (t == 't' || t == 'T') new_token.str_value = "tan" + new_value;
+                    else if ((t == 'c' || t == 'C') && (t2 == 's' || t2 == 'S')) new_token.str_value = "cos" + new_value;
+                    else new_token.str_value = "cot" + new_value;
+                    new_token.num_value = 0;
+                    tokens.push_back(new_token);
+                } else {
+                    new_token.kind = "trigonometric";
+                    if (t == 's' || t == 'S') new_token.str_value = "sin" + new_value;
+                    else if (t == 't' || t == 'T') new_token.str_value = "tan" + new_value;
+                    else if ((t == 'c' || t == 'C') && (t2 == 's' || t2 == 'S')) new_token.str_value = "cos" + new_value;
+                    else new_token.str_value = "cot" + new_value;
+                    new_token.num_value = 0;
+                    tokens.push_back(new_token);
+                }
+            } else {
+                string new_value = newNumberValue(index, math);
+                Token new_token;
+                new_token.kind = "trigonometric";
+                if (t == 's' || t == 'S') new_token.str_value = "sin" + new_value;
+                else if (t == 't' || t == 'T') new_token.str_value = "tan" + new_value;
+                else if ((t == 'c' || t == 'C') && (t2 == 's' || t2 == 'S')) new_token.str_value = "cos" + new_value;
+                else new_token.str_value = "cot" + new_value;
+                new_token.num_value = 0;
                 tokens.push_back(new_token);
             }
             continue;
@@ -182,32 +247,91 @@ void build_tree_right(Node* node, Token r) {
     buildTree(node->right_child, root.first, root.second);
 }
 
+void build_trigonometric_left(Node* node, Token l) {
+    node->left_child->id = id_counter; id_counter++;
+    string to_tokens = l.str_value;
+    node->left_child->kind = "trigonometric";
+    string opt_kind = ""; for (int i = 0; i < 3; i++) opt_kind += to_tokens[i];
+    if (opt_kind == "sin") node->left_child->str_value = "sin";
+    else if (opt_kind == "cos") node->left_child->str_value = "cos";
+    else if (opt_kind == "tan") node->left_child->str_value = "tan";
+    else if (opt_kind == "cot") node->left_child->str_value = "cot";
+    node->left_child->right_child = nullptr;
+    to_tokens.erase(0, 3);
+    vector<Token> tokens = tokenize(to_tokens);
+    if (tokens.size() == 1) {
+        node->left_child->left_child = new Node();
+        node->left_child->left_child->id = id_counter; id_counter++;
+        node->left_child->right_child = nullptr;
+        node->left_child->left_child->kind = "number";
+        node->left_child->left_child->str_value = to_string(tokens[0].num_value);
+        cout << node->left_child->left_child->str_value << endl;
+        node->left_child->left_child->left_child = nullptr;
+        node->left_child->left_child->right_child = nullptr;
+    } else {
+        node->left_child->left_child = new Node();
+        node->left_child->left_child->id = id_counter; id_counter++;
+        node->left_child->right_child = nullptr;
+        node->left_child->left_child->kind = "operation";
+        auto root = generate_kid(tokens);
+        string opt = root.first.back().str_value;
+        root.first.pop_back();
+        node->left_child->left_child->str_value = opt;
+        buildTree(node->left_child->left_child, root.first, root.second);
+    }
+}
+
+void build_trigonometric_right(Node* node, Token l) {
+    node->right_child->id = id_counter; id_counter++;
+    string to_tokens = l.str_value;
+    node->right_child->kind = "trigonometric";
+    string opt_kind = ""; for (int i = 0; i < 3; i++) opt_kind += to_tokens[i];
+    if (opt_kind == "sin") node->right_child->str_value = "sin";
+    else if (opt_kind == "cos") node->right_child->str_value = "cos";
+    else if (opt_kind == "tan") node->right_child->str_value = "tan";
+    else if (opt_kind == "cot") node->right_child->str_value = "cot";
+    node->right_child->right_child = nullptr;
+    to_tokens.erase(0, 3);
+    vector<Token> tokens = tokenize(to_tokens);
+    if (tokens.size() == 1) {
+        node->right_child->left_child = new Node();
+        node->right_child->left_child->id = id_counter; id_counter++;
+        node->right_child->right_child = nullptr;
+        node->right_child->left_child->kind = "number";
+        node->right_child->left_child->str_value = to_string(tokens[0].num_value);
+        cout << node->right_child->left_child->str_value << endl;
+        node->right_child->left_child->left_child = nullptr;
+        node->right_child->left_child->right_child = nullptr;
+    } else {
+        node->right_child->left_child = new Node();
+        node->right_child->left_child->id = id_counter; id_counter++;
+        node->right_child->right_child = nullptr;
+        node->right_child->left_child->kind = "operation";
+        auto root = generate_kid(tokens);
+        string opt = root.first.back().str_value;
+        root.first.pop_back();
+        node->right_child->left_child->str_value = opt;
+        buildTree(node->right_child->left_child, root.first, root.second);
+    }
+}
+
 
 void buildTree(Node* node, vector<Token> left, vector<Token> right) {
     node->left_child = new Node();
     node->right_child = new Node();
     if (left.size() == 1 && right.size() == 1) {
         Token l = left[0], r = right[0];
-        if (l.kind == "number" && r.kind == "number") {
-            build_number_left(node, l);
-            build_number_right(node, r);
-        } else if (l.kind == "number" && r.kind == "math") {
-            build_number_left(node, l);
-            build_tree_right(node, r);
-        } else if (l.kind == "math" && r.kind == "number") {
-            build_tree_left(node, l);
-            build_number_right(node, r);
-        } else {
-            build_tree_left(node, l);
-            build_tree_right(node, r);
-        }
+        if (l.kind == "number") build_number_left(node, l);
+        else if (l.kind == "math") build_tree_left(node, l);
+        else if (l.kind == "trigonometric") build_trigonometric_left(node, l);
+        if (r.kind == "number") build_number_right(node, r);
+        else if (r.kind == "trigonometric") build_trigonometric_right(node, r);
+        else if (r.kind == "math") build_tree_right(node, r);
     } else if (left.size() == 1) {
         Token l = left[0];
-        if (l.kind == "number") {
-            build_number_left(node, l);
-        } else {
-            build_tree_left(node, l);
-        }
+        if (l.kind == "number") build_number_left(node, l);
+        else if (l.kind == "trigonometric") build_trigonometric_left(node, l);
+        else build_tree_left(node, l);
         node->right_child->id = id_counter; id_counter++;
         node->right_child->kind = "operation";
         auto root = generate_kid(right);
@@ -224,11 +348,9 @@ void buildTree(Node* node, vector<Token> left, vector<Token> right) {
         node->left_child->str_value = opt;
         buildTree(node->left_child, root.first, root.second);
         Token r = right[0];
-        if (r.kind == "number") {
-            build_number_right(node, r);
-        } else {
-            build_tree_right(node, r);
-        }
+        if (r.kind == "number") build_number_right(node, r);
+        else if (r.kind == "trigonometric") build_trigonometric_right(node, r);
+        else build_tree_right(node, r);
     } else {
         node->left_child->id = id_counter; id_counter++;
         node->left_child->kind = "operation";
@@ -304,7 +426,6 @@ void writeFile1(ofstream& file, Node* node, int level) {
     if ((isDarkColor(level_colors[level]))) font_color = "#ffffff";
     
     file << node->id << " [label=\"" << node->str_value << "\", fillcolor=\"" << level_colors[level] << "\", fontcolor=\"" << font_color << "\"]" << endl;
-    // color = randomLightColor();
     level++;
     writeFile1(file, node->left_child, level);
     writeFile1(file, node->right_child, level);
@@ -334,7 +455,6 @@ void drawTree(Node* head) {
     file << "node [ shape=oval, style=filled, fontname=\"Calibri\", fontsize=24, penwidth=1.4, width=1, height=0.6, color=\"#7393B3\", fillcolor=\"#DDE7F0\", fontcolor=\"#2B3A42\" ];\n";
     file << "edge [ color=\"#78909C\", penwidth=1, arrowhead=vee, arrowsize=1.0 ];\n";
     string color = randomLightColor();
-    // level = 0;
     level_colors.clear();
     level_colors = level_colors_default;
     writeFile1(file, head, 0);
@@ -351,33 +471,33 @@ void calculate (Node* root, Node* main) {
     if (!root->left_child && !root->right_child) {
         return;
     }
-    calculate(root->left_child, main);
-    calculate(root->right_child, main);
-    if (root->str_value == "+") {
-        root->str_value = to_string(stof(root->left_child->str_value) + stof(root->right_child->str_value));
+    if (root->left_child) calculate(root->left_child, main);
+    if (root->right_child) calculate(root->right_child, main);
+    if (root->str_value == "sin") root->str_value = to_string(sin(stof(root->left_child->str_value) * (M_PI / 180)));
+    else if (root->str_value == "cos") root->str_value = to_string(cos(stof(root->left_child->str_value) * (M_PI / 180)));
+    else if (root->str_value == "tan") root->str_value = to_string(tan(stof(root->left_child->str_value) * (M_PI / 180)));
+    else if (root->str_value == "cot") root->str_value = to_string(1 / (tan(stof(root->left_child->str_value) * (M_PI / 180))));
+    else if (root->str_value == "+") root->str_value = to_string(stof(root->left_child->str_value) + stof(root->right_child->str_value));
+    else if (root->str_value == "-") root->str_value = to_string(stof(root->left_child->str_value) - stof(root->right_child->str_value));
+    else if (root->str_value == "*") root->str_value = to_string(stof(root->left_child->str_value) * stof(root->right_child->str_value));
+    else if (root->str_value == "/") root->str_value = to_string(stof(root->left_child->str_value) / stof(root->right_child->str_value));
+    else if (root->str_value == "$" || root->str_value == "^") root->str_value = to_string(pow(stof(root->left_child->str_value), stof(root->right_child->str_value)));
+
+    if (root->left_child != nullptr) {
+        Node* temp = root->left_child;
+        root->left_child = nullptr;
+        delete temp;
     }
-    else if (root->str_value == "-") {
-        root->str_value = to_string(stof(root->left_child->str_value) - stof(root->right_child->str_value));
+    if (root->right_child != nullptr) {
+        Node* temp = root->right_child;
+        root->right_child = nullptr;
+        delete temp;
     }
-    else if (root->str_value == "*") {
-        root->str_value = to_string(stof(root->left_child->str_value) * stof(root->right_child->str_value));
-    }
-    else if (root->str_value == "/") {
-        root->str_value = to_string(stof(root->left_child->str_value) / stof(root->right_child->str_value));
-    }
-    else if (root->str_value == "$" || root->str_value == "^") {
-        root->str_value = to_string(pow(stof(root->left_child->str_value), stof(root->right_child->str_value)));
-    }
-    Node* temp1 = root->left_child;
-    Node* temp2 = root->right_child;
-    root->left_child = nullptr;
-    root->right_child = nullptr;
-    delete temp1;
-    delete temp2;
 
     drawTree(main);
     return;
 }
+
 int valid_input_operation(string operation) {
     int value;
     while (true) {
@@ -455,10 +575,6 @@ int main() {
         operation[']' - 36] = max_op + 1;
     }
 
-    // char ops[6] = {'+', '-', '*', '/', '^', '$'};
-    // for (char c: ops) {
-    //     cout << operation[c - 36] << ' ';
-    // }
     system("cls");
     cin.clear();
     cin.ignore(numeric_limits<std::streamsize>::max(), '\n');
@@ -502,12 +618,21 @@ int main() {
     vector<Token> tokens = tokenize(result);
 
     cout << "Your input after normalising: " << result << endl;
+    auto root = generate_kid(tokens);
+
     // for (int i = 0; i < tokens.size(); i++) {
     //     if (tokens[i].kind == "number") cout << tokens[i].num_value << ' ';
     //     else cout << tokens[i].str_value << ' ';
-    // }
-    auto root = generate_kid(tokens);
-    cout << "here";
+    // } cout << endl;
+    // for (int i = 0; i < root.first.size(); i++) {
+    //     if (root.first[i].kind == "number") cout << root.first[i].num_value << ' ';
+    //     else cout << root.first[i].str_value << ' ';
+    // } cout << endl;
+    // for (int i = 0; i < root.second.size(); i++) {
+    //     if (root.second[i].kind == "number") cout << root.second[i].num_value << ' ';
+    //     else cout << root.second[i].str_value << ' ';
+    // } cout << endl;
+
     vector<Token> left_ch = root.first;
     vector<Token> right_ch = root.second;
     string opt = root.first.back().str_value;
