@@ -157,7 +157,6 @@ vector<Token> tokenize(string math) {
             index++;
             if (math[index] == '(') {
                 string new_value = newParenthesesValue(index, math);
-                cout << endl << new_value << endl;
                 Token new_token;
                 if (new_value[0] == 's' || new_value[0] == 'c' || new_value[0] == 't') {
                     new_token.kind = "trigonometric";
@@ -371,7 +370,6 @@ void build_trigonometric_right(Node* node, Token l) {
         node->right_child->right_child = nullptr;
         node->right_child->left_child->kind = "number";
         node->right_child->left_child->str_value = to_string(tokens[0].num_value);
-        cout << node->right_child->left_child->str_value << endl;
         node->right_child->left_child->left_child = nullptr;
         node->right_child->left_child->right_child = nullptr;
     } else {
