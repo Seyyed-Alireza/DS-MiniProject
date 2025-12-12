@@ -1,4 +1,24 @@
-// Group members: Seyyed Alireza Hosseini 403521231 - Arash Aghapour 403521051
+
+
+
+
+
+
+
+
+
+// Group members: Seyyed Alireza Hosseini 403521231 - Arash Aghapour 403521051 - Shahin Shapourzadeh 403521402
+// To run this code you must have installed graphviz on yuor computer
+
+// sample input: (++2 + 3 / 22) ++-+- √3 * (+90 - 22 / 2) ++-+- 5 * √(3+2)
+// sample input: sin(20+10) + cos(30* 2) + tan(√(45 * 45))
+// long input: (++2 + 3 / 22) ++-+- √3 * ((++2 + 3 / 22) ++-+- √3 * (+90 - 22 / 2) ++-+- 5 * √(3+2) - 22 / 2) ++-+- 5 * √(3+2) + ((++2 + 3 / 22) ++-+- √3 * (+90 - 22 / 2) ++-+- 5 * √(3+2))
+
+
+
+
+
+
 
 #include <bits/stdc++.h>
 #include <regex>
@@ -12,10 +32,6 @@
 #define _USE_MATH_DEFINES
 using namespace std;
 using namespace std::filesystem;
-
-// sample input: (++2 + 3 / 22) ++-+- √3 * (+90 - 22 / 2) ++-+- 5 * √(3+2)
-// sample input: sin(20+10) + cos(30* 2) + tan(√(45 * 45))
-// long input: (++2 + 3 / 22) ++-+- √3 * ((++2 + 3 / 22) ++-+- √3 * (+90 - 22 / 2) ++-+- 5 * √(3+2) - 22 / 2) ++-+- 5 * √(3+2) + ((++2 + 3 / 22) ++-+- √3 * (+90 - 22 / 2) ++-+- 5 * √(3+2))
 
 int operation[59];
 int id_counter = 1;
