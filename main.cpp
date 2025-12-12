@@ -131,19 +131,17 @@ vector<Token> tokenize(string math) {
         if (math[index] == '(') {
             string new_value = newParenthesesValue(index, math);
             Token new_token;
-            if (new_value[new_value.length() - 1] == 'n') {
+            if (new_value[0] == 's' || new_value[0] == 'c' || new_value[0] == 't') {
+                new_token.kind = "trigonometric";
+                new_token.str_value = new_value;
+                new_token.num_value = 0;
+                tokens.push_back(new_token);
+            } else if (new_value[new_value.length() - 1] == 'n') {
                 new_value.pop_back();
-                if (new_value[0] == 's' || new_value[0] == 'c' || new_value[0] == 't') {
-                    new_token.kind = "trigonometric";
-                    new_token.str_value = new_value;
-                    new_token.num_value = 0;
-                    tokens.push_back(new_token);
-                } else {
-                    new_token.kind = "number";
-                    new_token.str_value = "";
-                    new_token.num_value = stof(new_value);
-                    tokens.push_back(new_token);
-                }
+                new_token.kind = "number";
+                new_token.str_value = "";
+                new_token.num_value = stof(new_value);
+                tokens.push_back(new_token);
             } else {
                 new_token.kind = "math";
                 new_token.str_value = new_value;
@@ -166,17 +164,10 @@ vector<Token> tokenize(string math) {
                 }
                 else if (new_value[new_value.length() - 1] == 'n') {
                     new_value.pop_back();
-                    if (new_value[0] == 's' || new_value[0] == 'c' || new_value[0] == 't') {
-                        new_token.kind = "trigonometric";
-                        new_token.str_value = new_value;
-                        new_token.num_value = 0;
-                        tokens.push_back(new_token);
-                    } else {
-                        new_token.kind = "number";
-                        new_token.str_value = "";
-                        new_token.num_value = stof(new_value);
-                        tokens.push_back(new_token);
-                    }
+                    new_token.kind = "number";
+                    new_token.str_value = "";
+                    new_token.num_value = stof(new_value);
+                    tokens.push_back(new_token);
                 } else {
                     new_token.kind = "math";
                     new_token.str_value = new_value;
@@ -541,15 +532,15 @@ void calculate (Node* root, Node* main) {
     }
     if (root->left_child) calculate(root->left_child, main);
     if (root->right_child) calculate(root->right_child, main);
-    if (root->str_value == "sin") root->str_value = to_string(sin(stof(root->left_child->str_value) * (M_PI / 180)));
-    else if (root->str_value == "cos") root->str_value = to_string(cos(stof(root->left_child->str_value) * (M_PI / 180)));
-    else if (root->str_value == "tan") root->str_value = to_string(tan(stof(root->left_child->str_value) * (M_PI / 180)));
-    else if (root->str_value == "cot") root->str_value = to_string(1 / (tan(stof(root->left_child->str_value) * (M_PI / 180))));
-    else if (root->str_value == "+") root->str_value = to_string(stof(root->left_child->str_value) + stof(root->right_child->str_value));
+    if (root->str_value == "+") root->str_value = to_string(stof(root->left_child->str_value) + stof(root->right_child->str_value));
     else if (root->str_value == "-") root->str_value = to_string(stof(root->left_child->str_value) - stof(root->right_child->str_value));
     else if (root->str_value == "*") root->str_value = to_string(stof(root->left_child->str_value) * stof(root->right_child->str_value));
     else if (root->str_value == "/") root->str_value = to_string(stof(root->left_child->str_value) / stof(root->right_child->str_value));
     else if (root->str_value == "$" || root->str_value == "^") root->str_value = to_string(pow(stof(root->left_child->str_value), stof(root->right_child->str_value)));
+    else if (root->str_value == "sin") root->str_value = to_string(sin(stof(root->left_child->str_value) * (M_PI / 180)));
+    else if (root->str_value == "cos") root->str_value = to_string(cos(stof(root->left_child->str_value) * (M_PI / 180)));
+    else if (root->str_value == "tan") root->str_value = to_string(tan(stof(root->left_child->str_value) * (M_PI / 180)));
+    else if (root->str_value == "cot") root->str_value = to_string(1 / (tan(stof(root->left_child->str_value) * (M_PI / 180))));
 
     if (root->left_child != nullptr) {
         Node* temp = root->left_child;
