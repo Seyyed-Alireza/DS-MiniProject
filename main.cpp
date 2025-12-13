@@ -13,6 +13,8 @@
 // sample input: (++2 + 3 / 22) ++-+- √3 * (+90 - 22 / 2) ++-+- 5 * √(3+2)
 // sample input: sin(20+10) + cos(30* 2) + tan(√(45 * 45))
 // long input: (++2 + 3 / 22) ++-+- √3 * ((++2 + 3 / 22) ++-+- √3 * (+90 - 22 / 2) ++-+- 5 * √(3+2) - 22 / 2) ++-+- 5 * √(3+2) + ((++2 + 3 / 22) ++-+- √3 * (+90 - 22 / 2) ++-+- 5 * √(3+2))
+// sample input: (($((sin(60/2) + 1/2) * 25)))
+// sample input: tan(sin((($((sin(60/2) + 1/2) * 25)))*   5 + 5) * 9 + 40.5) * (10) - 1
 
 
 
@@ -148,16 +150,23 @@ vector<Token> tokenize(string math) {
             string new_value = newParenthesesValue(index, math);
             Token new_token;
             if (new_value[0] == 's' || new_value[0] == 'c' || new_value[0] == 't') {
-                new_token.kind = "trigonometric";
+                new_token.kind = "math";
                 new_token.str_value = new_value;
                 new_token.num_value = 0;
                 tokens.push_back(new_token);
             } else if (new_value[new_value.length() - 1] == 'n') {
-                new_value.pop_back();
-                new_token.kind = "number";
-                new_token.str_value = "";
-                new_token.num_value = stof(new_value);
-                tokens.push_back(new_token);
+                if (new_value[0] == 's' || new_value[0] == 'c' || new_value[0] == 't') {
+                    new_token.kind = "math";
+                    new_token.str_value = new_value;
+                    new_token.num_value = 0;
+                    tokens.push_back(new_token);
+                } else {
+                    new_value.pop_back();
+                    new_token.kind = "number";
+                    new_token.str_value = "";
+                    new_token.num_value = stof(new_value);
+                    tokens.push_back(new_token);
+                }
             } else {
                 new_token.kind = "math";
                 new_token.str_value = new_value;
@@ -173,17 +182,24 @@ vector<Token> tokenize(string math) {
                 string new_value = newParenthesesValue(index, math);
                 Token new_token;
                 if (new_value[0] == 's' || new_value[0] == 'c' || new_value[0] == 't') {
-                    new_token.kind = "trigonometric";
+                    new_token.kind = "math";
                     new_token.str_value = new_value;
                     new_token.num_value = 0;
                     tokens.push_back(new_token);
                 }
                 else if (new_value[new_value.length() - 1] == 'n') {
-                    new_value.pop_back();
-                    new_token.kind = "number";
-                    new_token.str_value = "";
-                    new_token.num_value = stof(new_value);
-                    tokens.push_back(new_token);
+                    if (new_value[0] == 's' || new_value[0] == 'c' || new_value[0] == 't') {
+                        new_token.kind = "math";
+                        new_token.str_value = new_value;
+                        new_token.num_value = 0;
+                        tokens.push_back(new_token);
+                    } else {
+                        new_value.pop_back();
+                        new_token.kind = "number";
+                        new_token.str_value = "";
+                        new_token.num_value = stof(new_value);
+                        tokens.push_back(new_token);
+                    }
                 } else {
                     new_token.kind = "math";
                     new_token.str_value = new_value;
